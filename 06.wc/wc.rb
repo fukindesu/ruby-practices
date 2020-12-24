@@ -41,4 +41,14 @@ else
       puts "#{File.basename(__FILE__)}: #{file}: open: No such file or directory"
     end
   end
+  received_lines = readlines
+  number_of_lines = received_lines.size
+  number_of_words = received_lines.map(&:split).flatten.size
+  number_of_bytes = received_lines.join.bytesize
+  puts [
+    number_of_lines.to_s.rjust(8),
+    number_of_words.to_s.rjust(8),
+    number_of_bytes.to_s.rjust(8),
+    ' total'
+  ].join
 end
