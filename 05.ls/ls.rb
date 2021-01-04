@@ -1,8 +1,6 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-exit if __FILE__ != $PROGRAM_NAME
-
 require 'optparse'
 require 'pathname'
 require 'etc'
