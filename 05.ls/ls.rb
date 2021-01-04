@@ -71,13 +71,14 @@ def mode_to_rwx_trio(stat)
 end
 
 # 出力
+specified_file_path_text = ARGV[0]
 if argv_opts['l']
   puts "total #{blocks_total}" if paths.size > 1
   paths.each do |path|
     name = if specified_path.directory?
              path.basename.to_s
            else
-             ARGV[0]
+             specified_file_path_text
            end
     puts [
       ftype_to_chr(path.stat) + mode_to_rwx_trio(path.stat),
@@ -100,5 +101,5 @@ elsif specified_path.directory?
   end
   containers.shift.zip(*containers) { puts _1.join("\t") }
 else
-  puts ARGV[0]
+  puts specified_file_path_text
 end
