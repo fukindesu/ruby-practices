@@ -7,7 +7,7 @@ require 'etc'
 
 # コマンドラインオプションの処理
 begin
-  ARGV_OPTS = ARGV.getopts('alr').freeze
+  argv_opts = ARGV.getopts('alr').freeze
 rescue OptionParser::ParseError
   puts '[ERROR] 対応できないオプション名が含まれていました'
   exit
@@ -16,10 +16,10 @@ end
 # 指定パスの処理
 case ARGV.size
 when 0
-  SPECIFIED_PATH = Pathname.new(Dir.getwd)
+  specified_path = Pathname.new(Dir.getwd)
 when 1
   if FileTest.exist?(ARGV[0])
-    SPECIFIED_PATH = Pathname.new(ARGV[0])
+    specified_path = Pathname.new(ARGV[0])
   else
     puts '[ERROR] 指定されたパスが見つかりませんでした'
     exit
@@ -33,18 +33,18 @@ end
 paths = []
 name_length_max = 0
 blocks_total = 0
-if SPECIFIED_PATH.directory?
-  Dir.foreach(SPECIFIED_PATH) do |filename|
-    next if !ARGV_OPTS['a'] && filename.start_with?('.')
+if specified_path.directory?
+  Dir.foreach(specified_path) do |filename|
+    next if !argv_opts['a'] && filename.start_with?('.')
 
-    path = Pathname.new(File.join(SPECIFIED_PATH, filename))
+    path = Pathname.new(File.join(specified_path, filename))
     paths << path
     name_length_max = [name_length_max, filename.length].max
     blocks_total += path.stat.blocks
   end
-  ARGV_OPTS['r'] ? paths.sort!.reverse! : paths.sort!
+  argv_opts['r'] ? paths.sort!.reverse! : paths.sort!
 else
-  paths << SPECIFIED_PATH
+  paths << specified_path
 end
 
 # 1文字のファイルタイプに変換するメソッド
@@ -71,10 +71,10 @@ def mode_to_rwx_trio(stat)
 end
 
 # 出力
-if ARGV_OPTS['l']
+if argv_opts['l']
   puts "total #{blocks_total}" if paths.size > 1
   paths.each do |path|
-    name = if SPECIFIED_PATH.directory?
+    name = if specified_path.directory?
              path.basename.to_s
            else
              ARGV[0]
@@ -89,7 +89,7 @@ if ARGV_OPTS['l']
       name
     ].join(' ')
   end
-elsif SPECIFIED_PATH.directory?
+elsif specified_path.directory?
   COLUMN_SIZE = 3
   required_row_size = (paths.size.to_f / COLUMN_SIZE).ceil
   containers = Array.new(COLUMN_SIZE) { [] }
