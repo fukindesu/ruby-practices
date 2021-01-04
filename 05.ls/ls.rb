@@ -5,6 +5,8 @@ require 'optparse'
 require 'pathname'
 require 'etc'
 
+COLUMN_SIZE = 3
+
 # コマンドラインオプションの処理
 begin
   argv_opts = ARGV.getopts('alr').freeze
@@ -91,7 +93,6 @@ if argv_opts['l']
     ].join(' ')
   end
 elsif specified_path.directory?
-  COLUMN_SIZE = 3
   required_row_size = (paths.size.to_f / COLUMN_SIZE).ceil
   containers = Array.new(COLUMN_SIZE) { [] }
   paths.each_with_index do |path, idx|
