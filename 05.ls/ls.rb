@@ -100,7 +100,7 @@ elsif specified_path.directory?
     assigned_idx = idx.div(required_row_size)
     containers[assigned_idx] << name
   end
-  containers.shift.zip(*containers) { puts _1.join("\t") }
+  containers.shift.zip(*containers) { |names| puts names.join("\t") }
 else
   puts specified_file_path_text
 end
