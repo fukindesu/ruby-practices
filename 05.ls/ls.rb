@@ -11,7 +11,7 @@ def main
   opts = validated_argv_opts
   specified_path = validated_specified_path
   paths, name_length_max, blocks_total = create_paths_while_aggregating(specified_path, opts)
-  file_path_text = assign_file_path_text_when_file_is_specified(specified_path)
+  file_path_text = file_path_text_when_file_is_specified(specified_path)
   show_appropriate_paths(specified_path, paths, name_length_max, blocks_total, file_path_text, opts)
 end
 
@@ -59,7 +59,7 @@ def create_paths_while_aggregating(specified_path, opts)
   [paths, name_length_max, blocks_total]
 end
 
-def assign_file_path_text_when_file_is_specified(specified_path)
+def file_path_text_when_file_is_specified(specified_path)
   ARGV[0] if specified_path.file?
 end
 
