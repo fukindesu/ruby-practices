@@ -8,27 +8,27 @@ require 'etc'
 COLUMN_SIZE = 3
 
 def main
-  assign_validated_argv_opts
-  assign_validated_specified_path
-  create_paths_while_aggregating
-  assign_file_path_text_when_file_is_specified
-  show_appropriate_paths
+  opts = validated_argv_opts
+  specified_path = validated_specified_path
+  paths, name_length_max, blocks_total = create_paths_while_aggregating(specified_path, opts)
+  file_path_text = assign_file_path_text_when_file_is_specified(specified_path)
+  show_appropriate_paths(specified_path, paths, name_length_max, blocks_total, file_path_text, opts)
 end
 
-def assign_validated_argv_opts
-  @argv_opts = ARGV.getopts('alr')
+def validated_argv_opts
+  ARGV.getopts('alr')
 rescue OptionParser::ParseError
   puts '[ERROR] 対応できないオプション名が含まれていました'
   exit
 end
 
-def assign_validated_specified_path
+def validated_specified_path
   case ARGV.size
   when 0
-    @specified_path = Pathname.new(Dir.getwd)
+    Pathname.new(Dir.getwd)
   when 1
     if FileTest.exist?(ARGV[0])
-      @specified_path = Pathname.new(ARGV[0])
+      Pathname.new(ARGV[0])
     else
       puts '[ERROR] 指定されたパスが見つかりませんでした'
       exit
@@ -39,44 +39,45 @@ def assign_validated_specified_path
   end
 end
 
-def create_paths_while_aggregating
-  @paths = []
-  @name_length_max = 0
-  @blocks_total = 0
-  if @specified_path.directory?
-    Dir.foreach(@specified_path) do |filename|
-      next if !@argv_opts['a'] && filename.start_with?('.')
+def create_paths_while_aggregating(specified_path, opts)
+  paths = []
+  name_length_max = 0
+  blocks_total = 0
+  if specified_path.directory?
+    Dir.foreach(specified_path) do |filename|
+      next if !opts['a'] && filename.start_with?('.')
 
-      path = Pathname.new(File.join(@specified_path, filename))
-      @paths << path
-      @name_length_max = [@name_length_max, filename.length].max
-      @blocks_total += path.stat.blocks
+      path = Pathname.new(File.join(specified_path, filename))
+      paths << path
+      name_length_max = [name_length_max, filename.length].max
+      blocks_total += path.stat.blocks
     end
-    @argv_opts['r'] ? @paths.sort!.reverse! : @paths.sort!
+    opts['r'] ? paths.sort!.reverse! : paths.sort!
   else
-    @paths << @specified_path
+    paths << specified_path
+  end
+  [paths, name_length_max, blocks_total]
+end
+
+def assign_file_path_text_when_file_is_specified(specified_path)
+  ARGV[0] if specified_path.file?
+end
+
+def show_appropriate_paths(specified_path, paths, name_length_max, blocks_total, file_path_text, opts)
+  if opts['l']
+    paths_with_l(specified_path, paths, blocks_total, file_path_text)
+  else
+    paths_without_l(specified_path, paths, name_length_max, file_path_text)
   end
 end
 
-def assign_file_path_text_when_file_is_specified
-  @file_path_text = ARGV[0] if @specified_path.file?
-end
-
-def show_appropriate_paths
-  if @argv_opts['l']
-    paths_with_l
-  else
-    paths_without_l
-  end
-end
-
-def paths_with_l
-  puts "total #{@blocks_total}" if @paths.size > 1
-  @paths.each do |path|
-    name = if @specified_path.directory?
+def paths_with_l(specified_path, paths, blocks_total, file_path_text)
+  puts "total #{blocks_total}" if paths.size > 1
+  paths.each do |path|
+    name = if specified_path.directory?
              path.basename.to_s
            else
-             @file_path_text
+             file_path_text
            end
     puts [
       ftype_to_chr(path.stat) + mode_to_rwx_trio(path.stat),
@@ -90,18 +91,18 @@ def paths_with_l
   end
 end
 
-def paths_without_l
-  if @specified_path.directory?
-    required_row_size = (@paths.size.to_f / COLUMN_SIZE).ceil
+def paths_without_l(specified_path, paths, name_length_max, file_path_text)
+  if specified_path.directory?
+    required_row_size = (paths.size.to_f / COLUMN_SIZE).ceil
     containers = Array.new(COLUMN_SIZE) { [] }
-    @paths.each_with_index do |path, idx|
-      name = path.basename.to_s.ljust(@name_length_max)
+    paths.each_with_index do |path, idx|
+      name = path.basename.to_s.ljust(name_length_max)
       assigned_idx = idx.div(required_row_size)
       containers[assigned_idx] << name
     end
     containers.shift.zip(*containers) { |names| puts names.join("\t") }
   else
-    puts @file_path_text
+    puts file_path_text
   end
 end
 
