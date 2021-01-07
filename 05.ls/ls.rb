@@ -95,7 +95,7 @@ def ls_without_l(specified_path, paths, stats)
     containers = Array.new(COLUMN_SIZE) { [] }
     paths.each_with_index do |path, idx|
       name = path.basename.to_s.ljust(stats[:name_length_max])
-      assigned_idx = idx.div(required_row_size)
+      assigned_idx = idx / required_row_size
       containers[assigned_idx] << name
     end
     containers.shift.zip(*containers) { |names| lists << names.join("\t") }
