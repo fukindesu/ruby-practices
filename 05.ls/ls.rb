@@ -51,7 +51,7 @@ def create_paths_and_stats(specified_path, opts)
       stats[:blocks_total] += path.stat.blocks
     end
     opts['r'] ? paths.sort!.reverse! : paths.sort!
-  else
+  elsif specified_path.file?
     paths << specified_path
     stats[:specified_path_text] = ARGV[0]
   end
@@ -99,7 +99,7 @@ def ls_without_l(specified_path, paths, stats)
       containers[assigned_idx] << name
     end
     containers.shift.zip(*containers) { |names| lists << names.join("\t") }
-  else
+  elsif specified_path.file?
     lists << stats[:specified_path_text]
   end
   lists
