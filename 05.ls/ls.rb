@@ -11,8 +11,7 @@ def main
   opts = validated_argv_opts
   specified_path = validated_specified_path
   paths, stats = create_paths_and_stats(specified_path, opts)
-  file_path_text = file_path_text_when_file_is_specified(specified_path)
-  show_appropriate_paths(specified_path, paths, stats, file_path_text, opts)
+  puts ls(specified_path, paths, stats, opts)
 end
 
 def validated_argv_opts
@@ -41,69 +40,66 @@ end
 
 def create_paths_and_stats(specified_path, opts)
   paths = []
-  stats = { name_lengths: [], blocks_subtotals: [] }
+  stats = { name_length_max: 0, blocks_total: 0, specified_path_text: '' }
   if specified_path.directory?
     Dir.foreach(specified_path) do |filename|
       next if !opts['a'] && filename.start_with?('.')
 
       path = Pathname.new(File.join(specified_path, filename))
       paths << path
-      stats[:name_lengths] << filename.length
-      stats[:blocks_subtotals] << path.stat.blocks
+      stats[:name_length_max] = [stats[:name_length_max], filename.length].max
+      stats[:blocks_total] += path.stat.blocks
     end
     opts['r'] ? paths.sort!.reverse! : paths.sort!
   else
     paths << specified_path
+    stats[:specified_path_text] = ARGV[0]
   end
   [paths, stats]
 end
 
-def file_path_text_when_file_is_specified(specified_path)
-  ARGV[0] if specified_path.file?
-end
-
-def show_appropriate_paths(specified_path, paths, stats, file_path_text, opts)
+def ls(specified_path, paths, stats, opts)
   if opts['l']
-    paths_with_l(specified_path, paths, stats, file_path_text)
+    ls_with_l(specified_path, paths, stats)
   else
-    paths_without_l(specified_path, paths, stats, file_path_text)
+    ls_without_l(specified_path, paths, stats)
   end
 end
 
-def paths_with_l(specified_path, paths, stats, file_path_text)
-  puts "total #{stats[:blocks_subtotals].sum}" if paths.size > 1
+def ls_with_l(specified_path, paths, stats)
+  lists = []
+  lists << "total #{stats[:blocks_total]}" if specified_path.directory?
   paths.each do |path|
-    name = if specified_path.directory?
-             path.basename.to_s
-           else
-             file_path_text
-           end
-    puts [
+    list = [
       ftype_to_chr(path.stat) + mode_to_rwx_trio(path.stat),
       path.stat.nlink.to_s,
       Etc.getpwuid(path.stat.uid).name,
       Etc.getgrgid(path.stat.gid).name,
       path.stat.size.to_s,
       path.stat.mtime.strftime('%-m %-d %H:%M'),
-      name
+      specified_path.directory? ? path.basename.to_s : stats[:specified_path_text]
     ].join(' ')
+    lists << list
   end
+  lists
 end
 
-def paths_without_l(specified_path, paths, stats, file_path_text)
+def ls_without_l(specified_path, paths, stats)
+  lists = []
   if specified_path.directory?
     required_row_size = (paths.size.to_f / COLUMN_SIZE).ceil
     containers = Array.new(COLUMN_SIZE) { [] }
-    required_column_length = stats[:name_lengths].max
+    required_column_length = stats[:name_length_max]
     paths.each_with_index do |path, idx|
       name = path.basename.to_s.ljust(required_column_length)
       assigned_idx = idx.div(required_row_size)
       containers[assigned_idx] << name
     end
-    containers.shift.zip(*containers) { |names| puts names.join("\t") }
+    containers.shift.zip(*containers) { |names| lists << names.join("\t") }
   else
-    puts file_path_text
+    lists << stats[:specified_path_text]
   end
+  lists
 end
 
 def ftype_to_chr(stat)
