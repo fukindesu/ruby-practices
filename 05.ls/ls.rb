@@ -77,7 +77,11 @@ def ls_with_l(specified_path, paths, stats)
       Etc.getgrgid(path.stat.gid).name,
       path.stat.size.to_s,
       path.stat.mtime.strftime('%-m %-d %H:%M'),
-      specified_path.directory? ? path.basename.to_s : stats[:specified_path_text]
+      name = if specified_path.directory?
+               path.basename.to_s
+             else
+               stats[:specified_path_text]
+             end
     ].join(' ')
     lists << list
   end
@@ -89,9 +93,8 @@ def ls_without_l(specified_path, paths, stats)
   if specified_path.directory?
     required_row_size = (paths.size.to_f / COLUMN_SIZE).ceil
     containers = Array.new(COLUMN_SIZE) { [] }
-    required_column_length = stats[:name_length_max]
     paths.each_with_index do |path, idx|
-      name = path.basename.to_s.ljust(required_column_length)
+      name = path.basename.to_s.ljust(stats[:name_length_max])
       assigned_idx = idx.div(required_row_size)
       containers[assigned_idx] << name
     end
