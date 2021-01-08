@@ -67,10 +67,10 @@ def ls(specified_path, paths, stats, opts)
 end
 
 def ls_with_l(specified_path, paths, stats)
-  lists = []
-  lists << "total #{stats[:blocks_total]}" if specified_path.directory?
+  lines = []
+  lines << "total #{stats[:blocks_total]}" if specified_path.directory?
   paths.each do |path|
-    list = [
+    line = [
       ftype_to_chr(path.stat) + mode_to_rwx_trio(path.stat),
       path.stat.nlink.to_s,
       Etc.getpwuid(path.stat.uid).name,
@@ -83,13 +83,13 @@ def ls_with_l(specified_path, paths, stats)
                stats[:specified_path_text]
              end
     ].join(' ')
-    lists << list
+    lines << line
   end
-  lists
+  lines
 end
 
 def ls_without_l(specified_path, paths, stats)
-  lists = []
+  lines = []
   if specified_path.directory?
     required_row_size = (paths.size.to_f / COLUMN_SIZE).ceil
     containers = Array.new(COLUMN_SIZE) { [] }
@@ -98,11 +98,11 @@ def ls_without_l(specified_path, paths, stats)
       assigned_idx = idx / required_row_size
       containers[assigned_idx] << name
     end
-    containers.shift.zip(*containers) { |names| lists << names.join("\t") }
+    containers.shift.zip(*containers) { |names| lines << names.join("\t") }
   elsif specified_path.file?
-    lists << stats[:specified_path_text]
+    lines << stats[:specified_path_text]
   end
-  lists
+  lines
 end
 
 def ftype_to_chr(stat)
