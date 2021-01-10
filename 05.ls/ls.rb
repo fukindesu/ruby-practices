@@ -88,16 +88,8 @@ def calc_blocks_total(pathnames)
   pathnames.map { |pathname| pathname.stat.blocks }.sum
 end
 
-def name_for_display(pathname, argv_path)
-  if argv_path.directory?
-    pathname.basename.to_s
-  elsif argv_path.file?
-    specified_path_text(argv_path)
-  end
-end
-
-def specified_path_text(argv_path)
-  ARGV[0]
+def file_path_text(argv_path)
+  ARGV[0] if argv_path.file?
 end
 
 def ftype_to_chr(stat)
@@ -121,6 +113,14 @@ def mode_to_rwx_trio(stat)
   [formats[u], formats[g], formats[o]].join
 end
 
+def name_for_display(pathname, argv_path)
+  if argv_path.directory?
+    pathname.basename.to_s
+  elsif argv_path.file?
+    file_path_text(argv_path)
+  end
+end
+
 def display_list_without_l_opt(pathnames, argv_path)
   rows = []
   if argv_path.directory?
@@ -134,7 +134,7 @@ def display_list_without_l_opt(pathnames, argv_path)
     end
     containers.shift.zip(*containers) { |names| rows << names.join("\t") }
   elsif argv_path.file?
-    rows << specified_path_text(argv_path)
+    rows << file_path_text(argv_path)
   end
   rows
 end
