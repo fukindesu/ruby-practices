@@ -88,10 +88,6 @@ def calc_blocks_total(pathnames)
   pathnames.map { |pathname| pathname.stat.blocks }.sum
 end
 
-def file_path_text(argv_path)
-  ARGV[0] if argv_path.file?
-end
-
 def ftype_to_chr(stat)
   {
     'blockSpecial' => 'b',
@@ -117,8 +113,12 @@ def name_for_display(pathname, argv_path)
   if argv_path.directory?
     pathname.basename.to_s
   elsif argv_path.file?
-    file_path_text(argv_path)
+    specified_file_path_text(argv_path)
   end
+end
+
+def specified_file_path_text(argv_path)
+  ARGV[0] if argv_path.file?
 end
 
 def display_list_without_l_opt(pathnames, argv_path)
@@ -134,7 +134,7 @@ def display_list_without_l_opt(pathnames, argv_path)
     end
     containers.shift.zip(*containers) { |names| rows << names.join("\t") }
   elsif argv_path.file?
-    rows << file_path_text(argv_path)
+    rows << specified_file_path_text(argv_path)
   end
   rows
 end
