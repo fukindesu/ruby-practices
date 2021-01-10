@@ -22,8 +22,8 @@ def fetch_cli_arguments(argv)
 
   if argv.empty?
     argv_path = Pathname.new(Dir.getwd)
-  elsif argv.one? && FileTest.exist?(argv)
-    argv_path = Pathname.new(argv)
+  elsif argv.one? && FileTest.exist?(argv[0])
+    argv_path = Pathname.new(argv[0])
   elsif argv.one?
     exit_after_outputting('指定されたパスが見つかりませんでした')
   elsif argv.size > 1
@@ -92,8 +92,12 @@ def name_for_display(pathname, argv_path)
   if argv_path.directory?
     pathname.basename.to_s
   elsif argv_path.file?
-    ARGV[0]
+    specified_path_text(argv_path)
   end
+end
+
+def specified_path_text(argv_path)
+  ARGV[0]
 end
 
 def ftype_to_chr(stat)
@@ -130,13 +134,13 @@ def display_list_without_l_opt(pathnames, argv_path)
     end
     containers.shift.zip(*containers) { |names| rows << names.join("\t") }
   elsif argv_path.file?
-    rows << display_name(pathname, argv_path)
+    rows << specified_path_text(argv_path)
   end
   rows
 end
 
 def calc_name_length_max(pathnames)
-  pathnames.map { |pathname| pathname.basename.length }.max
+  pathnames.map { |pathname| pathname.basename.to_s.length }.max
 end
 
 main
