@@ -91,21 +91,18 @@ def mode_to_rwx_trio(stat)
 end
 
 def display_list_without_l_opt(pathnames, argv_path)
-  rows = []
   if argv_path.directory?
     containers = Array.new(COLUMN_SIZE) { [] }
     row_size = (pathnames.size.to_f / COLUMN_SIZE).ceil
     pathnames.each_with_index do |pathname, idx|
-      name_length_max = calc_name_length_max(pathnames)
-      name = pathname.basename.to_s.ljust(name_length_max)
+      name = pathname.basename.to_s.ljust(calc_name_length_max(pathnames))
       assigned_idx = idx / row_size
       containers[assigned_idx] << name
     end
-    containers.shift.zip(*containers) { |names| rows << names.join("\t") }
+    containers.shift.zip(*containers).map { |names| names.join("\t") }
   else
-    rows << argv_path.basename.to_s
+    [argv_path.basename.to_s]
   end
-  rows
 end
 
 def calc_name_length_max(pathnames)
