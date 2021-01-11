@@ -58,7 +58,7 @@ def display_list_with_l_opt(pathnames, argv_path)
       Etc.getgrgid(stat.gid).name,
       stat.size.to_s,
       stat.mtime.strftime('%-m %-d %H:%M'),
-      name_for_display(pathname, argv_path)
+      pathname.basename.to_s
     ].join(' ')
     rows << row
   end
@@ -90,18 +90,6 @@ def mode_to_rwx_trio(stat)
   [formats[u], formats[g], formats[o]].join
 end
 
-def name_for_display(pathname, argv_path)
-  if argv_path.directory?
-    pathname.basename.to_s
-  elsif argv_path.file?
-    specified_file_path_text(argv_path)
-  end
-end
-
-def specified_file_path_text(argv_path)
-  ARGV[0] if argv_path.file?
-end
-
 def display_list_without_l_opt(pathnames, argv_path)
   rows = []
   if argv_path.directory?
@@ -114,8 +102,8 @@ def display_list_without_l_opt(pathnames, argv_path)
       containers[assigned_idx] << name
     end
     containers.shift.zip(*containers) { |names| rows << names.join("\t") }
-  elsif argv_path.file?
-    rows << specified_file_path_text(argv_path)
+  else
+    rows << argv_path.basename.to_s
   end
   rows
 end
