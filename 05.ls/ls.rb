@@ -14,27 +14,11 @@ def main
 end
 
 def fetch_cli_arguments(argv)
-  begin
-    argv_opts = argv.getopts('alr')
-  rescue OptionParser::InvalidOption # 理想はrescueを使わずに済む処理
-    exit_after_outputting('対応できないオプションが含まれていました')
-  end
+  argv_opts = argv.getopts('alr')
+  raise 'パスの指定は1つだけでお願いします' if argv.size > 1
 
-  if argv.empty?
-    argv_path = Pathname.new(Dir.getwd)
-  elsif argv.one? && FileTest.exist?(argv[0])
-    argv_path = Pathname.new(argv[0])
-  elsif argv.one?
-    exit_after_outputting('指定されたパスが見つかりませんでした')
-  elsif argv.size > 1
-    exit_after_outputting('パスの指定は1つだけでお願いします')
-  end
+  argv_path = argv.empty? ? Pathname.new(Dir.getwd) : Pathname.new(argv[0])
   [argv_path, argv_opts]
-end
-
-def exit_after_outputting(message)
-  puts "[ERROR] #{message}"
-  exit
 end
 
 def create_pathnames(argv_path, argv_opts)
