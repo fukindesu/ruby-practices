@@ -23,22 +23,19 @@ end
 
 def create_pathnames(argv_path, argv_opts)
   if argv_path.directory?
-    unsorted_pathnames = []
-    Dir.foreach(argv_path) do |filename|
-      next if !argv_opts['a'] && filename.start_with?('.')
-
-      pathname = Pathname.new(File.join(argv_path, filename))
-      unsorted_pathnames << pathname
-    end
-    pathnames = if argv_opts['r']
-                  unsorted_pathnames.sort.reverse
-                else
-                  unsorted_pathnames.sort
-                end
-  elsif argv_path.file?
-    pathnames = [argv_path]
+    create_pathnames_for_directory(argv_path, argv_opts)
+  else
+    [argv_path]
   end
-  pathnames
+end
+
+def create_pathnames_for_directory(argv_path, argv_opts)
+  flags = argv_opts['a'] ? File::FNM_DOTMATCH : 0
+  unsorted_pathnames =
+    Dir.glob('*', flags).map do |filename|
+      Pathname.new(File.join(argv_path, filename))
+    end.compact
+  argv_opts['r'] ? unsorted_pathnames.sort.reverse : unsorted_pathnames.sort
 end
 
 def display_list(pathnames, argv_path, argv_opts)
