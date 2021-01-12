@@ -6,6 +6,15 @@ require 'pathname'
 require 'etc'
 
 COLUMN_SIZE = 3
+FILE_TYPE_REFERENCE_TABLE = {
+  'blockSpecial' => 'b',
+  'characterSpecial' => 'c',
+  'directory' => 'd',
+  'link' => 'l',
+  'socket' => 's',
+  'fifo' => 'p',
+  'file' => '-'
+}.freeze
 
 def main
   argv_path, argv_opts = fetch_cli_arguments(ARGV)
@@ -47,12 +56,11 @@ def display_list(pathnames, argv_path, argv_opts)
 end
 
 def display_list_with_l_opt(pathnames, argv_path)
-  rows = []
-  rows << "total #{calc_blocks_total(pathnames)}" if argv_path.directory?
-  pathnames.each do |pathname|
+  total_row = "total #{calc_blocks_total(pathnames)}" if argv_path.directory?
+  rows = pathnames.map do |pathname|
     stat = pathname.stat
-    row = [
-      ftype_to_chr(stat) + mode_to_rwx_trio(stat),
+    [
+      FILE_TYPE_REFERENCE_TABLE[stat.ftype] + mode_to_rwx_trio(stat),
       stat.nlink.to_s,
       Etc.getpwuid(stat.uid).name,
       Etc.getgrgid(stat.gid).name,
@@ -60,25 +68,12 @@ def display_list_with_l_opt(pathnames, argv_path)
       stat.mtime.strftime('%-m %-d %H:%M'),
       pathname.basename.to_s
     ].join(' ')
-    rows << row
   end
-  rows
+  [total_row, *rows].compact
 end
 
 def calc_blocks_total(pathnames)
   pathnames.sum { |pathname| pathname.stat.blocks }
-end
-
-def ftype_to_chr(stat)
-  {
-    'blockSpecial' => 'b',
-    'characterSpecial' => 'c',
-    'directory' => 'd',
-    'link' => 'l',
-    'socket' => 's',
-    'fifo' => 'p',
-    'file' => '-'
-  }[stat.ftype]
 end
 
 def mode_to_rwx_trio(stat)
