@@ -66,7 +66,7 @@ def display_list_with_l_opt(pathnames, argv_path)
 end
 
 def calc_blocks_total(pathnames)
-  pathnames.map { |pathname| pathname.stat.blocks }.sum
+  pathnames.sum { |pathname| pathname.stat.blocks }
 end
 
 def ftype_to_chr(stat)
@@ -106,6 +106,7 @@ def display_list_without_l_opt(pathnames, argv_path)
 end
 
 def calc_name_length_max(pathnames)
+  # TODO: Pathname#maxを見つけられなかったため map { ブロック }.max で対応
   pathnames.map { |pathname| pathname.basename.to_s.length }.max
 end
 
