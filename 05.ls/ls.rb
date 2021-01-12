@@ -57,20 +57,37 @@ def display_list(pathnames, argv_path, argv_opts)
 end
 
 def display_list_with_l_opt(pathnames, argv_path)
+  max_lengths = calc_stat_max_lengths(pathnames)
   total_row = "total #{calc_blocks_total(pathnames)}" if argv_path.directory?
   rows = pathnames.map do |pathname|
     stat = pathname.stat
     [
-      FILE_TYPE_REFERENCE_TABLE[stat.ftype] + mode_to_rwx_trio(stat),
-      stat.nlink.to_s,
-      Etc.getpwuid(stat.uid).name,
-      Etc.getgrgid(stat.gid).name,
-      stat.size.to_s,
-      stat.mtime.strftime('%-m %-d %H:%M'),
+      # NOTE: 本家lsと同じ桁揃えにするため、未実装の拡張属性1文字分として半角スペースを追加しました
+      "#{FILE_TYPE_REFERENCE_TABLE[stat.ftype]}#{mode_to_rwx_trio(stat)} ",
+      stat.nlink.to_s.rjust(max_lengths[:nlink]),
+      Etc.getpwuid(stat.uid).name.ljust(max_lengths[:user]),
+      Etc.getgrgid(stat.gid).name.center(max_lengths[:group] + 2),
+      stat.size.to_s.rjust(max_lengths[:size]),
+      stat.mtime.strftime('%-m').rjust(2),
+      stat.mtime.strftime('%e'),
+      stat.mtime.strftime('%H:%M'),
       pathname.basename.to_s
     ].join(' ')
   end
   [total_row, *rows].compact
+end
+
+def calc_stat_max_lengths(pathnames)
+  # FIXME: やや強引に処理している気もしています…
+  max_lengths = { nlink: 0, user: 0, group: 0, size: 0 }
+  pathnames.each do |pathname|
+    stat = pathname.stat
+    max_lengths[:nlink] = [max_lengths[:nlink], stat.nlink.to_s.length].max
+    max_lengths[:user] = [max_lengths[:user], Etc.getpwuid(stat.uid).name.length].max
+    max_lengths[:group] = [max_lengths[:group], Etc.getgrgid(stat.gid).name.length].max
+    max_lengths[:size] = [max_lengths[:size], stat.size.to_s.length].max
+  end
+  max_lengths
 end
 
 def calc_blocks_total(pathnames)
@@ -87,7 +104,7 @@ def display_list_without_l_opt(pathnames, argv_path)
     containers = Array.new(COLUMN_SIZE) { [] }
     row_size = (pathnames.size.to_f / COLUMN_SIZE).ceil
     pathnames.each_with_index do |pathname, idx|
-      name = pathname.basename.to_s.ljust(calc_name_length_max(pathnames))
+      name = pathname.basename.to_s.ljust(calc_basename_length_max(pathnames))
       assigned_idx = idx / row_size
       containers[assigned_idx] << name
     end
@@ -97,9 +114,9 @@ def display_list_without_l_opt(pathnames, argv_path)
   end
 end
 
-def calc_name_length_max(pathnames)
-  # NOTE: Pathname#maxが無かったため「map { ブロック }.max」で対応
-  pathnames.map { |pathname| pathname.basename.to_s.length }.max
+def calc_basename_length_max(pathnames)
+  # NOTE: mapを経由せず直接maxを呼び出すことができました（1行が100文字近くなったため複数行にすべきか悩みました）
+  pathnames.max { |a, b| a.basename.to_s.length <=> b.basename.to_s.length }.basename.to_s.length
 end
 
 main
