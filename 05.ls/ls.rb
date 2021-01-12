@@ -42,7 +42,7 @@ end
 def create_pathnames_for_directory(argv_path, argv_opts)
   flags = argv_opts['a'] ? File::FNM_DOTMATCH : 0
   unsorted_pathnames =
-    Dir.glob('*', flags).map do |filename|
+    Dir.glob('*', flags, base: argv_path).map do |filename|
       Pathname.new(File.join(argv_path, filename))
     end.compact
   argv_opts['r'] ? unsorted_pathnames.sort.reverse : unsorted_pathnames.sort
