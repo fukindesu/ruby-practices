@@ -15,6 +15,7 @@ FILE_TYPE_REFERENCE_TABLE = {
   'fifo' => 'p',
   'file' => '-'
 }.freeze
+RWX_FORMAT_PERMISSIONS = %w[--- --x -w- -wx r-- r-x rw- rwx].freeze
 
 def main
   argv_path, argv_opts = fetch_cli_arguments(ARGV)
@@ -77,12 +78,8 @@ def calc_blocks_total(pathnames)
 end
 
 def mode_to_rwx_trio(stat)
-  octal = stat.mode.to_s(8)
-  formats = %i[--- --x -w- -wx r-- r-x rw- rwx]
-  u = octal[-3].to_i
-  g = octal[-2].to_i
-  o = octal[-1].to_i
-  [formats[u], formats[g], formats[o]].join
+  octal_mode_text = stat.mode.to_s(8)[-3, 3]
+  octal_mode_text.chars.map { |char| RWX_FORMAT_PERMISSIONS[char.to_i] }.join
 end
 
 def display_list_without_l_opt(pathnames, argv_path)
