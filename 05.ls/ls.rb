@@ -72,7 +72,7 @@ def display_list_with_l_opt(pathnames, argv_path)
       stat.mtime.strftime('%-m').rjust(2),
       stat.mtime.strftime('%e'),
       stat.mtime.strftime('%H:%M'),
-      pathname.basename.to_s
+      pathname.basename
     ].join(' ')
   end
   [total_row, *rows].compact
@@ -111,7 +111,7 @@ def display_list_without_l_opt(pathnames, argv_path)
     end
     containers.shift.zip(*containers).map { |names| names.join("\t") }
   else
-    [argv_path.basename.to_s]
+    [argv_path.basename]
   end
 end
 
