@@ -104,8 +104,9 @@ def display_list_without_l_opt(pathnames, argv_path)
   if argv_path.directory?
     containers = Array.new(COLUMN_SIZE) { [] }
     row_size = (pathnames.size.to_f / COLUMN_SIZE).ceil
+    max_length = calc_basename_length_max(pathnames)
     pathnames.each_with_index do |pathname, idx|
-      name = pathname.basename.to_s.ljust(calc_basename_length_max(pathnames))
+      name = pathname.basename.to_s.ljust(max_length)
       assigned_idx = idx / row_size
       containers[assigned_idx] << name
     end
