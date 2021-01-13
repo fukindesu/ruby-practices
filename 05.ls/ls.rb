@@ -96,7 +96,7 @@ end
 
 def mode_to_rwx_trio(stat)
   octal_mode_text = stat.mode.to_s(8)[-3, 3]
-  octal_mode_text.chars.map { |char| RWX_FORMAT_PERMISSIONS[char.to_i] }.join
+  octal_mode_text.each_char.map { |char| RWX_FORMAT_PERMISSIONS[char.to_i] }.join
 end
 
 def display_list_without_l_opt(pathnames, argv_path)
