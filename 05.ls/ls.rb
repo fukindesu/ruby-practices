@@ -29,7 +29,7 @@ def fetch_cli_arguments(argv)
   argv_opts = argv.getopts('alr')
   raise 'パスの指定は1つだけでお願いします' if argv.size > 1
 
-  argv_path = argv.empty? ? Pathname.new(Dir.getwd) : Pathname.new(argv[0])
+  argv_path = Pathname.new(argv[0] || Dir.getwd)
   [argv_path, argv_opts]
 end
 
@@ -46,7 +46,7 @@ def create_pathnames_for_directory(argv_path, argv_opts)
   unsorted_pathnames =
     Dir.glob('*', flags, base: argv_path).map do |filename|
       Pathname.new(File.join(argv_path, filename))
-    end.compact
+    end
   argv_opts['r'] ? unsorted_pathnames.sort.reverse : unsorted_pathnames.sort
 end
 
