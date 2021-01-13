@@ -64,7 +64,6 @@ def display_list_with_l_opt(pathnames, argv_path)
   rows = pathnames.map do |pathname|
     stat = pathname.stat
     [
-      # NOTE: 本家lsと同じ桁揃えにするため、未実装の拡張属性1文字分として半角スペースを追加しました
       "#{FILE_TYPE_REFERENCE_TABLE[stat.ftype]}#{mode_to_rwx_trio(stat)} ",
       stat.nlink.to_s.rjust(max_lengths[:nlink]),
       Etc.getpwuid(stat.uid).name.ljust(max_lengths[:user]),
