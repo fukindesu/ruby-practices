@@ -79,16 +79,15 @@ def display_list_with_l_opt(pathnames, argv_path)
 end
 
 def calc_stat_max_lengths(pathnames)
-  # FIXME: やや強引に処理している気もしています…
-  max_lengths = { nlink: 0, user: 0, group: 0, size: 0 }
+  max_lengths = { nlink: [], user: [], group: [], size: [] }
   pathnames.each do |pathname|
     stat = pathname.stat
-    max_lengths[:nlink] = [max_lengths[:nlink], stat.nlink.to_s.length].max
-    max_lengths[:user] = [max_lengths[:user], Etc.getpwuid(stat.uid).name.length].max
-    max_lengths[:group] = [max_lengths[:group], Etc.getgrgid(stat.gid).name.length].max
-    max_lengths[:size] = [max_lengths[:size], stat.size.to_s.length].max
+    max_lengths[:nlink] << stat.nlink.to_s.length
+    max_lengths[:user] << Etc.getpwuid(stat.uid).name.length
+    max_lengths[:group] << Etc.getgrgid(stat.gid).name.length
+    max_lengths[:size] << stat.size.to_s.length
   end
-  max_lengths
+  max_lengths.transform_values(&:max)
 end
 
 def calc_blocks_total(pathnames)
