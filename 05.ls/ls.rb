@@ -6,6 +6,7 @@ require 'pathname'
 require 'etc'
 
 COLUMN_SIZE = 3
+
 FILE_TYPE_REFERENCE_TABLE = {
   'blockSpecial' => 'b',
   'characterSpecial' => 'c',
@@ -15,6 +16,7 @@ FILE_TYPE_REFERENCE_TABLE = {
   'fifo' => 'p',
   'file' => '-'
 }.freeze
+
 RWX_FORMAT_PERMISSIONS = %w[--- --x -w- -wx r-- r-x rw- rwx].freeze
 
 def main
