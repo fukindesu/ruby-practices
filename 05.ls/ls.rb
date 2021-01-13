@@ -117,8 +117,7 @@ def display_list_without_l_opt(pathnames, argv_path)
 end
 
 def calc_basename_length_max(pathnames)
-  # NOTE: mapを経由せず直接maxを呼び出すことができました（1行が100文字近くなったため複数行にすべきか悩みました）
-  pathnames.max { |a, b| a.basename.to_s.length <=> b.basename.to_s.length }.basename.to_s.length
+  pathnames.map { |pathname| pathname.basename.to_s.length }.max
 end
 
 main
