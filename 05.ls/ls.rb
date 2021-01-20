@@ -1,106 +1,122 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-exit if __FILE__ != $PROGRAM_NAME
-
 require 'optparse'
 require 'pathname'
 require 'etc'
 
-# コマンドラインオプションの処理
-begin
-  ARGV_OPTS = ARGV.getopts('alr').freeze
-rescue OptionParser::ParseError
-  puts '[ERROR] 対応できないオプション名が含まれていました'
-  exit
+COLUMN_SIZE = 3
+
+FILE_TYPE_REFERENCE_TABLE = {
+  'blockSpecial' => 'b',
+  'characterSpecial' => 'c',
+  'directory' => 'd',
+  'link' => 'l',
+  'socket' => 's',
+  'fifo' => 'p',
+  'file' => '-'
+}.freeze
+
+RWX_FORMAT_PERMISSIONS = %w[--- --x -w- -wx r-- r-x rw- rwx].freeze
+
+def main
+  argv_path, argv_opts = fetch_cli_arguments(ARGV)
+  pathnames = create_pathnames(argv_path, argv_opts)
+  puts display_list(pathnames, argv_path, argv_opts)
 end
 
-# 指定パスの処理
-case ARGV.size
-when 0
-  SPECIFIED_PATH = Pathname.new(Dir.getwd)
-when 1
-  if FileTest.exist?(ARGV[0])
-    SPECIFIED_PATH = Pathname.new(ARGV[0])
+def fetch_cli_arguments(argv)
+  argv_opts = argv.getopts('alr')
+  raise 'パスの指定は1つだけでお願いします' if argv.size > 1
+
+  argv_path = Pathname.new(argv[0] || Dir.getwd)
+  [argv_path, argv_opts]
+end
+
+def create_pathnames(argv_path, argv_opts)
+  if argv_path.directory?
+    create_pathnames_for_directory(argv_path, argv_opts)
   else
-    puts '[ERROR] 指定されたパスが見つかりませんでした'
-    exit
+    [argv_path]
   end
-else
-  puts '[ERROR] パスの指定は1つだけでお願いします'
-  exit
 end
 
-# 指定パスからPathnameオブジェクトを作成
-paths = []
-name_length_max = 0
-blocks_total = 0
-if SPECIFIED_PATH.directory?
-  Dir.foreach(SPECIFIED_PATH) do |filename|
-    next if !ARGV_OPTS['a'] && filename.start_with?('.')
+def create_pathnames_for_directory(argv_path, argv_opts)
+  flags = argv_opts['a'] ? File::FNM_DOTMATCH : 0
+  unsorted_pathnames =
+    Dir.glob('*', flags, base: argv_path).map do |filename|
+      Pathname.new(File.join(argv_path, filename))
+    end
+  argv_opts['r'] ? unsorted_pathnames.sort.reverse : unsorted_pathnames.sort
+end
 
-    path = Pathname.new(File.join(SPECIFIED_PATH, filename))
-    paths << path
-    name_length_max = [name_length_max, filename.length].max
-    blocks_total += path.stat.blocks
+def display_list(pathnames, argv_path, argv_opts)
+  if argv_opts['l']
+    display_list_with_l_opt(pathnames, argv_path)
+  else
+    display_list_without_l_opt(pathnames, argv_path)
   end
-  ARGV_OPTS['r'] ? paths.sort!.reverse! : paths.sort!
-else
-  paths << SPECIFIED_PATH
 end
 
-# 1文字のファイルタイプに変換するメソッド
-def ftype_to_chr(stat)
-  {
-    'blockSpecial' => 'b',
-    'characterSpecial' => 'c',
-    'directory' => 'd',
-    'link' => 'l',
-    'socket' => 's',
-    'fifo' => 'p',
-    'file' => '-'
-  }[stat.ftype]
-end
-
-# rwx方式のパーミッションに変換するメソッド
-def mode_to_rwx_trio(stat)
-  octal = stat.mode.to_s(8)
-  formats = %i[--- --x -w- -wx r-- r-x rw- rwx]
-  u = octal[-3].to_i
-  g = octal[-2].to_i
-  o = octal[-1].to_i
-  [formats[u], formats[g], formats[o]].join
-end
-
-# 出力
-if ARGV_OPTS['l']
-  puts "total #{blocks_total}" if paths.size > 1
-  paths.each do |path|
-    name = if SPECIFIED_PATH.directory?
-             path.basename.to_s
-           else
-             ARGV[0]
-           end
-    puts [
-      ftype_to_chr(path.stat) + mode_to_rwx_trio(path.stat),
-      path.stat.nlink.to_s,
-      Etc.getpwuid(path.stat.uid).name,
-      Etc.getgrgid(path.stat.gid).name,
-      path.stat.size.to_s,
-      path.stat.mtime.strftime('%-m %-d %H:%M'),
-      name
+def display_list_with_l_opt(pathnames, argv_path)
+  max_lengths = calc_stat_max_lengths(pathnames)
+  total_row = "total #{calc_blocks_total(pathnames)}" if argv_path.directory?
+  rows = pathnames.map do |pathname|
+    stat = pathname.stat
+    [
+      "#{FILE_TYPE_REFERENCE_TABLE[stat.ftype]}#{mode_to_rwx_trio(stat)} ",
+      stat.nlink.to_s.rjust(max_lengths[:nlink]),
+      Etc.getpwuid(stat.uid).name.ljust(max_lengths[:user]),
+      Etc.getgrgid(stat.gid).name.center(max_lengths[:group] + 2),
+      stat.size.to_s.rjust(max_lengths[:size]),
+      stat.mtime.strftime('%-m').rjust(2),
+      stat.mtime.strftime('%e'),
+      stat.mtime.strftime('%H:%M'),
+      pathname.basename
     ].join(' ')
   end
-elsif SPECIFIED_PATH.directory?
-  COLUMN_SIZE = 3
-  required_row_size = (paths.size.to_f / COLUMN_SIZE).ceil
-  containers = Array.new(COLUMN_SIZE) { [] }
-  paths.each_with_index do |path, idx|
-    name = path.basename.to_s.ljust(name_length_max)
-    assigned_idx = idx.div(required_row_size)
-    containers[assigned_idx] << name
-  end
-  containers.shift.zip(*containers) { puts _1.join("\t") }
-else
-  puts ARGV[0]
+  [total_row, *rows].compact
 end
+
+def calc_stat_max_lengths(pathnames)
+  max_lengths = { nlink: [], user: [], group: [], size: [] }
+  pathnames.each do |pathname|
+    stat = pathname.stat
+    max_lengths[:nlink] << stat.nlink.to_s.length
+    max_lengths[:user] << Etc.getpwuid(stat.uid).name.length
+    max_lengths[:group] << Etc.getgrgid(stat.gid).name.length
+    max_lengths[:size] << stat.size.to_s.length
+  end
+  max_lengths.transform_values(&:max)
+end
+
+def calc_blocks_total(pathnames)
+  pathnames.sum { |pathname| pathname.stat.blocks }
+end
+
+def mode_to_rwx_trio(stat)
+  octal_mode_text = stat.mode.to_s(8)[-3, 3]
+  octal_mode_text.each_char.map { |char| RWX_FORMAT_PERMISSIONS[char.to_i] }.join
+end
+
+def display_list_without_l_opt(pathnames, argv_path)
+  if argv_path.directory?
+    containers = Array.new(COLUMN_SIZE) { [] }
+    row_size = (pathnames.size.to_f / COLUMN_SIZE).ceil
+    max_length = calc_basename_length_max(pathnames)
+    pathnames.each_with_index do |pathname, idx|
+      name = pathname.basename.to_s.ljust(max_length)
+      assigned_idx = idx / row_size
+      containers[assigned_idx] << name
+    end
+    containers.shift.zip(*containers).map { |names| names.join("\t") }
+  else
+    [argv_path.basename]
+  end
+end
+
+def calc_basename_length_max(pathnames)
+  pathnames.map { |pathname| pathname.basename.to_s.length }.max
+end
+
+main
