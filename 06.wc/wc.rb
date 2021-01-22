@@ -3,52 +3,73 @@
 
 require 'optparse'
 
-# コマンドラインオプションの処理
-begin
-  ARGV_OPTS = ARGV.getopts('l').freeze
-rescue OptionParser::ParseError
-  puts '[ERROR] 対応できないオプション名が含まれていました'
-  exit
+def main
+  stdin_or_files, options = fetch_cli_arguments(ARGV)
+  results_in_records = generate_results_in_records(stdin_or_files)
+  puts display_wc(results_in_records, options)
 end
 
-case ARGV.size
-when 0
-  received_lines = readlines
-  number_of_lines = received_lines.size
-  number_of_words = received_lines.map(&:split).flatten.size
-  number_of_bytes = received_lines.join.bytesize
-  puts [
-    number_of_lines.to_s.rjust(8),
-    number_of_words.to_s.rjust(8),
-    number_of_bytes.to_s.rjust(8)
-  ].join
-else
-  ARGV.each do |file|
-    if FileTest.file?(file)
-      received_lines = IO.readlines(file)
-      number_of_lines = received_lines.size
-      number_of_words = received_lines.map(&:split).flatten.size
-      number_of_bytes = received_lines.join.bytesize
-      puts [
-        number_of_lines.to_s.rjust(8),
-        number_of_words.to_s.rjust(8),
-        number_of_bytes.to_s.rjust(8),
-        " #{file}"
-      ].join
-    elsif FileTest.directory?(file)
-      puts "#{File.basename(__FILE__)}: #{file}: read: Is a directory"
-    else
-      puts "#{File.basename(__FILE__)}: #{file}: open: No such file or directory"
+def fetch_cli_arguments(argv)
+  options = argv.getopts('l')
+  stdin_or_files = argv
+  [stdin_or_files, options]
+end
+
+def generate_results_in_records(stdin_or_files)
+  if stdin?(stdin_or_files)
+    text = readlines
+    filename = nil
+    [generate_results(text, filename)]
+  else
+    stdin_or_files.map do |file|
+      text = IO.readlines(file)
+      filename = File.basename(file)
+      generate_results(text, filename)
     end
-    received_lines = readlines
-    number_of_lines = received_lines.size
-    number_of_words = received_lines.map(&:split).flatten.size
-    number_of_bytes = received_lines.join.bytesize
-    puts [
-      number_of_lines.to_s.rjust(8),
-      number_of_words.to_s.rjust(8),
-      number_of_bytes.to_s.rjust(8),
+  end
+end
+
+def stdin?(stdin_or_files)
+  stdin_or_files.none?
+end
+
+def generate_results(text, filename)
+  {
+    lines: text.size,
+    words: text.map(&:split).flatten.size,
+    bytes: text.join.bytesize,
+    filename: filename
+  }
+end
+
+def display_wc(results_in_records, options)
+  records = []
+  records << results_in_records.map do |results|
+    [
+      results[:lines].to_s.rjust(8),
+      options['l'] ? nil : results[:words].to_s.rjust(8),
+      options['l'] ? nil : results[:bytes].to_s.rjust(8),
+      " #{results[:filename]}"
+    ].join
+  end
+  if results_in_records.size > 1
+    totals = calc_totals(results_in_records)
+    records << [
+      totals[:lines].to_s.rjust(8),
+      options['l'] ? nil : totals[:words].to_s.rjust(8),
+      options['l'] ? nil : totals[:bytes].to_s.rjust(8),
       ' total'
     ].join
   end
+  records
 end
+
+def calc_totals(results_in_records)
+  {
+    lines: results_in_records.sum { |results| results[:lines] },
+    words: results_in_records.sum { |results| results[:words] },
+    bytes: results_in_records.sum { |results| results[:bytes] }
+  }
+end
+
+main
