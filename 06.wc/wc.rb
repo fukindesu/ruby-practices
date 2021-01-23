@@ -53,18 +53,18 @@ def display_wc(results_in_records, options)
     ].join
   end
   if results_in_records.size > 1
-    totals = calc_totals(results_in_records)
+    total_results = calc_total_results(results_in_records)
     records << [
-      totals[:lines].to_s.rjust(8),
-      options['l'] ? nil : totals[:words].to_s.rjust(8),
-      options['l'] ? nil : totals[:bytes].to_s.rjust(8),
+      total_results[:lines].to_s.rjust(8),
+      options['l'] ? nil : total_results[:words].to_s.rjust(8),
+      options['l'] ? nil : total_results[:bytes].to_s.rjust(8),
       ' total'
     ].join
   end
   records
 end
 
-def calc_totals(results_in_records)
+def calc_total_results(results_in_records)
   {
     lines: results_in_records.sum { |results| results[:lines] },
     words: results_in_records.sum { |results| results[:words] },
