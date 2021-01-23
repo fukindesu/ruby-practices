@@ -5,8 +5,8 @@ require 'optparse'
 
 def main
   stdin_or_files, options = fetch_cli_arguments(ARGV)
-  results_in_records = generate_results_in_records(stdin_or_files)
-  puts display_wc(results_in_records, options)
+  records_with_results = generate_records_with_results(stdin_or_files)
+  puts display_wc(records_with_results, options)
 end
 
 def fetch_cli_arguments(argv)
@@ -15,16 +15,16 @@ def fetch_cli_arguments(argv)
   [stdin_or_files, options]
 end
 
-def generate_results_in_records(stdin_or_files)
+def generate_records_with_results(stdin_or_files)
   if stdin?(stdin_or_files)
     text = readlines
-    filename = nil
-    [generate_results(text, filename)]
+    name = nil
+    [generate_results(text, name)]
   else
     stdin_or_files.map do |file|
       text = IO.readlines(file)
-      filename = File.basename(file)
-      generate_results(text, filename)
+      name = File.basename(file)
+      generate_results(text, name)
     end
   end
 end
@@ -33,42 +33,37 @@ def stdin?(stdin_or_files)
   stdin_or_files.none?
 end
 
-def generate_results(text, filename)
+def generate_results(text, name)
   {
     lines: text.size,
     words: text.map(&:split).flatten.size,
     bytes: text.join.bytesize,
-    filename: filename
+    name: name
   }
 end
 
-def display_wc(results_in_records, options)
-  records = []
-  records << results_in_records.map do |results|
+def display_wc(records_with_results, options)
+  rows_with_results = records_with_results
+  if records_with_results.size > 1
+    total_results = generate_total_results(records_with_results)
+    rows_with_results << total_results
+  end
+  rows_with_results.map do |results|
     [
       results[:lines].to_s.rjust(8),
       options['l'] ? nil : results[:words].to_s.rjust(8),
       options['l'] ? nil : results[:bytes].to_s.rjust(8),
-      " #{results[:filename]}"
+      " #{results[:name]}"
     ].join
   end
-  if results_in_records.size > 1
-    total_results = calc_total_results(results_in_records)
-    records << [
-      total_results[:lines].to_s.rjust(8),
-      options['l'] ? nil : total_results[:words].to_s.rjust(8),
-      options['l'] ? nil : total_results[:bytes].to_s.rjust(8),
-      ' total'
-    ].join
-  end
-  records
 end
 
-def calc_total_results(results_in_records)
+def generate_total_results(records_with_results)
   {
-    lines: results_in_records.sum { |results| results[:lines] },
-    words: results_in_records.sum { |results| results[:words] },
-    bytes: results_in_records.sum { |results| results[:bytes] }
+    lines: records_with_results.sum { |results| results[:lines] },
+    words: records_with_results.sum { |results| results[:words] },
+    bytes: records_with_results.sum { |results| results[:bytes] },
+    name: 'total'
   }
 end
 
