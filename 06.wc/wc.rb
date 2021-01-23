@@ -43,17 +43,17 @@ def generate_results(text, name)
 end
 
 def display_wc(records_with_results, options)
-  rows_with_results = records_with_results
-  if records_with_results.size > 1
+  rows = records_with_results
+  if rows.size >= 2
     total_results = generate_total_results(records_with_results)
-    rows_with_results << total_results
+    rows << total_results
   end
-  rows_with_results.map do |results|
+  rows.map do |row|
     [
-      results[:lines].to_s.rjust(8),
-      options['l'] ? nil : results[:words].to_s.rjust(8),
-      options['l'] ? nil : results[:bytes].to_s.rjust(8),
-      " #{results[:name]}"
+      row[:lines].to_s.rjust(8),
+      options['l'] ? nil : row[:words].to_s.rjust(8),
+      options['l'] ? nil : row[:bytes].to_s.rjust(8),
+      " #{row[:name]}"
     ].join
   end
 end
