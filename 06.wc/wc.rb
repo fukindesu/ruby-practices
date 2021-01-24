@@ -51,10 +51,10 @@ def display_wc(records_with_results, options)
   rows.map do |row|
     [
       row[:lines].to_s.rjust(8),
-      options['l'] ? nil : row[:words].to_s.rjust(8),
-      options['l'] ? nil : row[:bytes].to_s.rjust(8),
-      " #{row[:name]}"
-    ].join
+      options['l'] ? nil : row[:words].to_s.rjust(7),
+      options['l'] ? nil : row[:bytes].to_s.rjust(7),
+      row[:name]
+    ].join(' ')
   end
 end
 
