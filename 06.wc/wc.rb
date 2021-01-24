@@ -54,7 +54,7 @@ def display_wc(records_with_results, options)
       options['l'] ? nil : row[:words].to_s.rjust(7),
       options['l'] ? nil : row[:bytes].to_s.rjust(7),
       row[:name]
-    ].join(' ')
+    ].compact.join(' ')
   end
 end
 
