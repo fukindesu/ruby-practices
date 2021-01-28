@@ -5,8 +5,8 @@ require 'optparse'
 
 def main
   stdin_or_files, options = fetch_cli_arguments(ARGV)
-  records_with_results = generate_records_with_results(stdin_or_files)
-  puts display_wc(records_with_results, options)
+  array_with_results = generate_array_with_results(stdin_or_files)
+  puts display_wc(array_with_results, options)
 end
 
 def fetch_cli_arguments(argv)
@@ -15,7 +15,7 @@ def fetch_cli_arguments(argv)
   [stdin_or_files, options]
 end
 
-def generate_records_with_results(stdin_or_files)
+def generate_array_with_results(stdin_or_files)
   if stdin?(stdin_or_files)
     text = readlines
     name = nil
@@ -42,10 +42,10 @@ def generate_results(text, name)
   }
 end
 
-def display_wc(records_with_results, options)
-  rows = records_with_results
+def display_wc(array_with_results, options)
+  rows = array_with_results
   if rows.size >= 2
-    total_results = calc_total_results(records_with_results)
+    total_results = calc_total_results(array_with_results)
     rows << total_results
   end
   rows.map do |row|
@@ -58,11 +58,11 @@ def display_wc(records_with_results, options)
   end
 end
 
-def calc_total_results(records_with_results)
+def calc_total_results(array_with_results)
   {
-    lines: records_with_results.sum { |results| results[:lines] },
-    words: records_with_results.sum { |results| results[:words] },
-    bytes: records_with_results.sum { |results| results[:bytes] },
+    lines: array_with_results.sum { |results| results[:lines] },
+    words: array_with_results.sum { |results| results[:words] },
+    bytes: array_with_results.sum { |results| results[:bytes] },
     name: 'total'
   }
 end
