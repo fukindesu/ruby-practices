@@ -30,14 +30,6 @@ def stdin?(stdin_or_files)
   stdin_or_files.none?
 end
 
-def generate_array_with_results_for_files(files)
-  files.map do |file|
-    text = IO.readlines(file)
-    name = File.basename(file)
-    generate_results(text, name)
-  end
-end
-
 def generate_results(text, name)
   {
     lines: text.size,
@@ -45,6 +37,14 @@ def generate_results(text, name)
     bytes: text.join.bytesize,
     name: name
   }
+end
+
+def generate_array_with_results_for_files(files)
+  files.map do |file|
+    text = IO.readlines(file)
+    name = File.basename(file)
+    generate_results(text, name)
+  end
 end
 
 def display_wc(array_with_results, options)
