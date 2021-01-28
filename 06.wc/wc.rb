@@ -5,7 +5,7 @@ require 'optparse'
 
 def main
   stdin_or_files, options = fetch_cli_arguments(ARGV)
-  array_with_results = generate_array_with_results(stdin_or_files)
+  array_with_results = fetch_array_with_results(stdin_or_files)
   puts display_wc(array_with_results, options)
 end
 
@@ -15,7 +15,7 @@ def fetch_cli_arguments(argv)
   [stdin_or_files, options]
 end
 
-def generate_array_with_results(stdin_or_files)
+def fetch_array_with_results(stdin_or_files)
   if stdin?(stdin_or_files)
     text = readlines
     name = nil
