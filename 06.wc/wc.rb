@@ -45,7 +45,7 @@ end
 def display_wc(records_with_results, options)
   rows = records_with_results
   if rows.size >= 2
-    total_results = generate_total_results(records_with_results)
+    total_results = calc_total_results(records_with_results)
     rows << total_results
   end
   rows.map do |row|
@@ -58,7 +58,7 @@ def display_wc(records_with_results, options)
   end
 end
 
-def generate_total_results(records_with_results)
+def calc_total_results(records_with_results)
   {
     lines: records_with_results.sum { |results| results[:lines] },
     words: records_with_results.sum { |results| results[:words] },
