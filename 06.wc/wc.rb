@@ -21,16 +21,21 @@ def fetch_array_with_results(stdin_or_files)
     name = nil
     [generate_results(text, name)]
   else
-    stdin_or_files.map do |file|
-      text = IO.readlines(file)
-      name = File.basename(file)
-      generate_results(text, name)
-    end
+    files = stdin_or_files
+    generate_array_with_results_for_files(files)
   end
 end
 
 def stdin?(stdin_or_files)
   stdin_or_files.none?
+end
+
+def generate_array_with_results_for_files(files)
+  files.map do |file|
+    text = IO.readlines(file)
+    name = File.basename(file)
+    generate_results(text, name)
+  end
 end
 
 def generate_results(text, name)
