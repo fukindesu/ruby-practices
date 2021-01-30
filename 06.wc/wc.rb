@@ -22,7 +22,7 @@ def fetch_array_with_results(stdin_or_files)
     [generate_results(text, name)]
   else
     files = stdin_or_files
-    generate_array_with_results_for_files(files)
+    generate_array_with_results_from_files(files)
   end
 end
 
@@ -39,7 +39,7 @@ def generate_results(text, name)
   }
 end
 
-def generate_array_with_results_for_files(files)
+def generate_array_with_results_from_files(files)
   files.map do |file|
     text = IO.readlines(file)
     name = File.basename(file)
